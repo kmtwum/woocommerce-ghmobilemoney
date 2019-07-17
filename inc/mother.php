@@ -21,8 +21,8 @@
             // $this->init_settings();
             // $this->title = $this->get_option('title');
 
-            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ));
-            add_filter('plugin_action_links_' . plugin_basename( $this->file ), array( $this, 'manage' ) );
+            // add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ));
+            // add_filter('plugin_action_links_' . plugin_basename( $this->file ), array( $this, 'manage' ) );
         }
 
         public function init_form_fields() {
