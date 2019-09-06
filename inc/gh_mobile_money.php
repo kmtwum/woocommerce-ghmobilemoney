@@ -1,6 +1,6 @@
 <?php
 
-    class gh_mobile_money extends WC_Payment_Gateway {
+    class wc_gateway_momo extends WC_Payment_Gateway {
 
         public function __construct() {
             $this->id = 'ghmobilemoney';
@@ -24,31 +24,48 @@
         }
 
         public function hooker_back() {
-            $incoming = json_decode(file_get_contents('php://input'));
+            $data = json_decode(file_get_contents('php://input'), true);
             $this->tail("Stuff coming in...");
-            $this->tail($incoming);
-
-            // if ( isset( $decoded->TransactionId ) ) {
-            //     if ( $response_data->Authorized == true ) {
-            //
-            //         // Set order status to processing
-            //         $order->update_status( 'processing', sprintf( __( 'Authorized  %s %s on credit card.', 'woocommerce-my-payment-gateway' ), get_woocommerce_currency(), $order->get_total() ) );
-            //     } else {
-            //         // Set order status to payment failed
-            //         $order->update_status( 'failed', sprintf( __( 'Card payment failed.', 'woocommerce-my-payment-gateway' ) ) );
-            //     }
-            // }
+            $this->tail($data);
+            if (empty($data)) {
+                exit('ended');
+            }
+            $trans_ref = $data["trans_ref"];
+            $trans_status = $data["trans_status"];
+            $order_id = substr($trans_ref, strpos($trans_ref, '_') + 1);
+            $order = wc_get_order( $order_id );
+            if (strpos($trans_status, '000') !== false) {
+                //Success
+                $order->update_status( 'completed', sprintf( __( 'Authorized  %s %s on mobile wallet.', 'ghmobilemoney' ), get_woocommerce_currency(), $order->get_total() ) );
+                $this->tail('Order marked as successful');
+            } else {
+                //Failed
+                $order->update_status( 'failed', sprintf( __( 'Mobile payment failed.', 'ghmobilemoney' ) ) );
+                $this->tail('Order marked as failed');
+            }
         }
 
         public function payment_fields() {
             $fields = [
-                'momo-number-field' => '<p class="form-row form-row-wide">
-                    <label for="' . esc_attr( $this->id ) . '-momo-number">' . esc_html__( 'Mobile Money Number', 'ghmobilemoney' ) . '&nbsp;<span class="required">*</span></label>
-                    <input id="' . esc_attr( $this->id ) . '-momo-number" name="' . esc_attr( $this->id ) . '-momo-number" class="input-text" inputmode="numeric" maxlength="10" autocomplete="tel" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="02xxxxxxxx"  />
-                    <div class="alert alert-secondary" role="alert">
-                      Please check your wallet approvals to complete the transaction after clicking <b>Place Order</b>.
-                    </div>
-                </p>',
+                    'momo_platform' => '<p class="form-row form-row-wide">
+                        <label for="' . esc_attr( $this->id ) . '-momo-platform">' . esc_html__( 'Mobile Money Platform', 'ghmobilemoney' ) . '&nbsp;<span class="required">*</span></label>
+                        <select class="input-text" name="' . esc_attr( $this->id ) . '-momo-platform" style="width:100%" id="' . esc_attr( $this->id ) . '-momo-platform">
+                            <option value="">Select Platform</option>
+                            <option value="MTN">MTN Mobile Money</option>
+                            <option value="VOD">Vodafone Cash</option>
+                        </select>
+                        </p>',
+                    'momo_voucher' => '<p class="form-row form-row-wide">
+                        <label for="' . esc_attr( $this->id ) . '-momo-voucher">' . esc_html__( 'Vodafone Voucher', 'ghmobilemoney' ) . '</label>
+                        <input id="' . esc_attr( $this->id ) . '-momo-voucher" name="' . esc_attr( $this->id ) . '-momo-voucher" class="input-text" inputmode="numeric" maxlength="10" type="text" placeholder="Ignore if using MTN"  />
+                        </p>',
+                    'momo-number-field' => '<p class="form-row form-row-wide">
+                        <label for="' . esc_attr( $this->id ) . '-momo-number">' . esc_html__( 'Mobile Money Number', 'ghmobilemoney' ) . '&nbsp;<span class="required">*</span></label>
+                        <input id="' . esc_attr( $this->id ) . '-momo-number" name="' . esc_attr( $this->id ) . '-momo-number" class="input-text" inputmode="numeric" maxlength="10" autocomplete="tel" type="tel" placeholder="02xxxxxxxx"  />
+                        <div class="" role="alert">
+                          Please check your wallet approvals to complete the transaction after clicking <b>Place Order</b>.
+                        </div>
+                    </p>',
             ];
             ?>
 
@@ -90,22 +107,16 @@
                     'default'     => __( 'Pay via MTN Mobile Money / Vodafone Cash.', 'ghmobilemoney' ),
                 ],
                 'merchant_options' => [
-                    'title' => __( 'Merchant Options', 'ghmobilemoney' ),
+                    'title' => __( 'Merchant Options (AppsNMobile)', 'ghmobilemoney' ),
                     'type' => 'title',
                     'description' => __("The following options affect where your funds will be sent when clients are billed. \r\n Use only if you have a fund collection account", 'ghmobilemoney'),
                     'id'   => 'merchant_options'
                 ],
-                'merchant_platform' => [
-                    'title'       => __( 'Merchant Platform', 'ghmobilemoney' ),
-                    'type'        => 'select',
-                    'class'       => 'wc-enhanced-select',
-                    'description' => __( 'Select a collection point. Ignore to have one created for you.', 'ghmobilemoney' ),
-                    'desc_tip'    => true,
-                    'options'     => [
-                        'auto'    => __( 'Set Up One For Me', 'ghmobilemoney' ),
-                        'anm'    => __( 'AppsNMobile', 'ghmobilemoney' ),
-                        'hub' => __( 'Hubtel', 'ghmobilemoney' ),
-                    ],
+                'client_id' => [
+                    'title'       => __( 'AppsNMobile Client ID', 'ghmobilemoney' ),
+                    'id'          => 'anm_client_id',
+                    'type'        => 'text',
+                    'description' => __( 'Your client/merchant ID issued by AppsNMobile.', 'ghmobilemoney' ),
                 ],
             ];
         }
@@ -113,6 +124,8 @@
         public function process_payment( $order_id ) {
             $order = wc_get_order( $order_id );
             $order_data = json_decode($order);
+            $momo_settings = get_option( 'woocommerce_ghmobilemoney_settings');
+            $client_id = $momo_settings['client_id'];
             $data = [
                     'woo' => $this->gen_id('WOO'),
                     'callback' => get_bloginfo( 'url' ) . '/wc-api/gh_mobile_money/',
@@ -120,9 +133,12 @@
                     'info' => 'Purchase on ' . get_bloginfo('name'),
                     'order_id' => $order_data->id,
                     'mobile_number' => $_POST['ghmobilemoney-momo-number'],
+                    'platform' => $_POST['ghmobilemoney-momo-platform'],
+                    'voucher' => $_POST['ghmobilemoney-momo-voucher'],
+                    'client'  => $client_id,
             ];
             $this->call($data);
-            $order->update_status( 'processing', __( 'Awaiting payment confirmation', 'ghmobilemoney' ) );
+            $order->update_status( 'pending', __( 'Awaiting payment confirmation from user.', 'ghmobilemoney' ) );
             $order->reduce_order_stock();
             WC()->cart->empty_cart();
             return array(

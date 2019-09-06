@@ -1,8 +1,8 @@
 <?php
     /*
-    Plugin Name: Gh Mobile Money
+    Plugin Name: Woocommerce AppsNMobile Payment Gateway
     Plugin URI:
-    Description: Accept Mobile Money payments on your website.
+    Description: Accept mobile money payments on your WooCommerce powered website directly to your orchard backend.
     Version: 1.0
     Author: Kwame Twum
     Author URI: https://github.com/kmtwum
@@ -37,12 +37,12 @@
 
 
     function add_momo_to_gateways( $gateways ) {
-        $gateways[] = 'Gh_Mobile_Money';
+        $gateways[] = 'wc_gateway_momo';
         return $gateways;
     }
 
 
     function momo_init() {
         require_once 'inc/gh_mobile_money.php';
-        return new gh_mobile_money();
+        return new wc_gateway_momo();
     }
