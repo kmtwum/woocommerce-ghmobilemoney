@@ -127,7 +127,7 @@
             $momo_settings = get_option( 'woocommerce_ghmobilemoney_settings');
             $client_id = $momo_settings['client_id'];
             $data = [
-                    'woo' => $this->gen_id('WOO'),
+                    'woo' => $this->gen_id('WOO').'_'.$order_id,
                     'callback' => get_bloginfo( 'url' ) . '/wc-api/gh_mobile_money/',
                     'amount' => $order_data->total,
                     'info' => 'Purchase on ' . get_bloginfo('name'),
@@ -185,7 +185,7 @@
         }
 
         function gen_id($prefix) {
-            $date  = new DateTime (); $curstamp = $date->format('Y-m-d-H-i');
+            $date  = new DateTime (); $curstamp = $date->format('Y-m-d');
             $t_id = $prefix.str_replace('-', '', $curstamp).mt_rand(10000, 50000);
             return $t_id;
         }
